@@ -230,24 +230,27 @@ def expand(item, tokens):
 
     parts = []
 
-    for part in item.lefts:
-        if part.pos_ in BREAKER_POS:
-            break
-        if not part.lower_ in NEGATIONS:
-            parts.append(part)
+    if hasattr(item, 'lefts'):
+        for part in item.lefts:
+            if part.pos_ in BREAKER_POS:
+                break
+            if not part.lower_ in NEGATIONS:
+                parts.append(part)
 
     parts.append(item)
 
-    for part in item.rights:
-        if part.pos_ in BREAKER_POS:
-            break
-        if not part.lower_ in NEGATIONS:
-            parts.append(part)
+    if hasattr(item, 'rights'):
+        for part in item.rights:
+            if part.pos_ in BREAKER_POS:
+                break
+            if not part.lower_ in NEGATIONS:
+                parts.append(part)
 
-    for item2 in parts[-1].rights:
-        if item2.pos_ == "DET" or item2.pos_ == "NOUN":
-            parts.extend(expand(item2, tokens))
-        break
+    if hasattr(parts[-1], 'rights'):
+        for item2 in parts[-1].rights:
+            if item2.pos_ == "DET" or item2.pos_ == "NOUN":
+                parts.extend(expand(item2, tokens))
+            break
 
     return parts
 
