@@ -40,3 +40,5 @@ outputs a list of tuples, each tuple containing the Subject,Verb,Object
 ```
 [('Chris Kraft', 'neared', 'the end of a tedious Friday afternoon'), ('he', 'monitored', 'a interminable ground test of the Apollo spacecraft')]
 ```
+
+Alternatively, run `demo.py` to see its use.

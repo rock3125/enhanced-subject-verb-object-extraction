@@ -224,7 +224,7 @@ def printDeps(toks):
 
 
 # expand an obj / subj np using its chunk
-def expand(item, tokens):
+def expand(item, tokens, visited):
     if item.lower_ == 'that':
         item = _get_that_resolution(tokens)
 
@@ -249,7 +249,9 @@ def expand(item, tokens):
     if hasattr(parts[-1], 'rights'):
         for item2 in parts[-1].rights:
             if item2.pos_ == "DET" or item2.pos_ == "NOUN":
-                parts.extend(expand(item2, tokens))
+                if item2.i not in visited:
+                    visited.add(item2.i)
+                    parts.extend(expand(item2, tokens, visited))
             break
 
     return parts
@@ -265,6 +267,7 @@ def findSVOs(tokens):
     svos = []
     is_pas = _is_passive(tokens)
     verbs = [tok for tok in tokens if _is_non_aux_verb(tok)]
+    visited = set()  # recursion detection
     for v in verbs:
         subs, verbNegated = _get_all_subs(v)
         # hopefully there are subs, if not, don't examine this verb any longer
@@ -276,25 +279,25 @@ def findSVOs(tokens):
                     for obj in objs:
                         objNegated = _is_negated(obj)
                         if is_pas:  # reverse object / subject for passive
-                            svos.append((to_str(expand(obj, tokens)),
-                                         "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens))))
-                            svos.append((to_str(expand(obj, tokens)),
-                                         "!" + v2.lemma_ if verbNegated or objNegated else v2.lemma_, to_str(expand(sub, tokens))))
+                            svos.append((to_str(expand(obj, tokens, visited)),
+                                         "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited))))
+                            svos.append((to_str(expand(obj, tokens, visited)),
+                                         "!" + v2.lemma_ if verbNegated or objNegated else v2.lemma_, to_str(expand(sub, tokens, visited))))
                         else:
-                            svos.append((to_str(expand(sub, tokens)),
-                                         "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens))))
-                            svos.append((to_str(expand(sub, tokens)),
-                                         "!" + v2.lower_ if verbNegated or objNegated else v2.lower_, to_str(expand(obj, tokens))))
+                            svos.append((to_str(expand(sub, tokens, visited)),
+                                         "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited))))
+                            svos.append((to_str(expand(sub, tokens, visited)),
+                                         "!" + v2.lower_ if verbNegated or objNegated else v2.lower_, to_str(expand(obj, tokens, visited))))
             else:
                 v, objs = _get_all_objs(v, is_pas)
                 for sub in subs:
                     for obj in objs:
                         objNegated = _is_negated(obj)
                         if is_pas:  # reverse object / subject for passive
-                            svos.append((to_str(expand(obj, tokens)),
-                                         "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens))))
+                            svos.append((to_str(expand(obj, tokens, visited)),
+                                         "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited))))
                         else:
-                            svos.append((to_str(expand(sub, tokens)),
-                                         "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens))))
+                            svos.append((to_str(expand(sub, tokens, visited)),
+                                         "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited))))
     return svos
 
