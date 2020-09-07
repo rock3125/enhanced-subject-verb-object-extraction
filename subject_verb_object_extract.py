@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import en_core_web_sm
+from collections.abc import Iterable
 
 # use spacy small model
 nlp = en_core_web_sm.load()
@@ -259,8 +260,10 @@ def expand(item, tokens, visited):
 
 # convert a list of tokens to a string
 def to_str(tokens):
-    return ' '.join([item.text for item in tokens])
-
+    if isinstance(tokens, Iterable):
+        return ' '.join([item.text for item in tokens])
+    else:
+        return ''
 
 # find verbs and their subjects / objects to create SVOs, detect passive/active sentences
 def findSVOs(tokens):
