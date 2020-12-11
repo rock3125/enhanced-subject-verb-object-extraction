@@ -152,9 +152,22 @@ def _get_all_subs(v):
     return subs, verb_negated
 
 
+# find the main verb - or any aux verb if we can't find it
+def _find_verbs(tokens):
+    verbs = [tok for tok in tokens if _is_non_aux_verb(tok)]
+    if len(verbs) == 0:
+        verbs = [tok for tok in tokens if _is_verb(tok)]
+    return verbs
+
+
 # is the token a verb?  (excluding auxiliary verbs)
 def _is_non_aux_verb(tok):
     return tok.pos_ == "VERB" and (tok.dep_ != "aux" and tok.dep_ != "auxpass")
+
+
+# is the token a verb?  (excluding auxiliary verbs)
+def _is_verb(tok):
+    return tok.pos_ == "VERB" or tok.pos_ == "AUX"
 
 
 # return the verb to the right of this verb in a CCONJ relationship if applicable
@@ -265,11 +278,12 @@ def to_str(tokens):
     else:
         return ''
 
+
 # find verbs and their subjects / objects to create SVOs, detect passive/active sentences
 def findSVOs(tokens):
     svos = []
     is_pas = _is_passive(tokens)
-    verbs = [tok for tok in tokens if _is_non_aux_verb(tok)]
+    verbs = _find_verbs(tokens)
     visited = set()  # recursion detection
     for v in verbs:
         subs, verbNegated = _get_all_subs(v)
@@ -294,13 +308,19 @@ def findSVOs(tokens):
             else:
                 v, objs = _get_all_objs(v, is_pas)
                 for sub in subs:
-                    for obj in objs:
-                        objNegated = _is_negated(obj)
-                        if is_pas:  # reverse object / subject for passive
-                            svos.append((to_str(expand(obj, tokens, visited)),
-                                         "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited))))
-                        else:
-                            svos.append((to_str(expand(sub, tokens, visited)),
-                                         "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited))))
+                    if len(objs) > 0:
+                        for obj in objs:
+                            objNegated = _is_negated(obj)
+                            if is_pas:  # reverse object / subject for passive
+                                svos.append((to_str(expand(obj, tokens, visited)),
+                                             "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited))))
+                            else:
+                                svos.append((to_str(expand(sub, tokens, visited)),
+                                             "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited))))
+                    else:
+                        # no obj - just return the SV parts
+                        svos.append((to_str(expand(sub, tokens, visited)),
+                                     "!" + v.lower_ if verbNegated else v.lower_,))
+
     return svos
 
