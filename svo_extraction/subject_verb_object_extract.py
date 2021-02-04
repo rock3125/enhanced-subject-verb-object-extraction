@@ -14,7 +14,7 @@
 
 import en_core_web_sm
 from collections.abc import Iterable
-from contractions.contractions import ContractText
+from .contractions import ContractText
 # use spacy small model
 
 # dependency markers for subjects
