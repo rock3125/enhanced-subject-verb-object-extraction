@@ -14,9 +14,8 @@
 
 import en_core_web_sm
 from collections.abc import Iterable
-
+from .contractions import ContractText
 # use spacy small model
-nlp = en_core_web_sm.load()
 
 # dependency markers for subjects
 SUBJECTS = {"nsubj", "nsubjpass", "csubj", "csubjpass", "agent", "expl"}
@@ -26,13 +25,13 @@ OBJECTS = {"dobj", "dative", "attr", "oprd"}
 BREAKER_POS = {"CCONJ", "VERB"}
 # words that are negations
 NEGATIONS = {"no", "not", "n't", "never", "none"}
-
+def get_spacy_nlp_sm_model():
+    return en_core_web_sm.load()
 
 # does dependency set contain any coordinating conjunctions?
 def contains_conj(depSet):
     return "and" in depSet or "or" in depSet or "nor" in depSet or \
            "but" in depSet or "yet" in depSet or "so" in depSet or "for" in depSet
-
 
 # get subs joined by conjunctions
 def _get_subs_from_conjunctions(subs):
@@ -224,7 +223,7 @@ def _get_that_resolution(toks):
 
 
 # simple stemmer using lemmas
-def _get_lemma(word: str):
+def _get_lemma(nlp, word: str):
     tokens = nlp(word)
     if len(tokens) == 1:
         return tokens[0].lemma_
@@ -236,9 +235,13 @@ def printDeps(toks):
     for tok in toks:
         print(tok.orth_, tok.dep_, tok.pos_, tok.head.orth_, [t.orth_ for t in tok.lefts], [t.orth_ for t in tok.rights])
 
+# remove punctiation characters
+def removePunctuationCharacters(tokens:'list spacy tokens'):
+    not_punctuation_token = [token for token in tokens if not token.is_punct]
+    return not_punctuation_token
 
 # expand an obj / subj np using its chunk
-def expand(item, tokens, visited):
+def expand(item, tokens, visited, removepunctuation=False):
     if item.lower_ == 'that':
         item = _get_that_resolution(tokens)
 
@@ -265,9 +268,11 @@ def expand(item, tokens, visited):
             if item2.pos_ == "DET" or item2.pos_ == "NOUN":
                 if item2.i not in visited:
                     visited.add(item2.i)
-                    parts.extend(expand(item2, tokens, visited))
+                    parts.extend(expand(item2, tokens, visited,removepunctuation))
             break
 
+    if removepunctuation:
+        return removePunctuationCharacters(parts)
     return parts
 
 
@@ -278,9 +283,18 @@ def to_str(tokens):
     else:
         return ''
 
+def uncontract(text:str):
+    return ContractText().uncontract(text)
+
+def findSVOs(nlp: "spacy doc", text:str,  removepunctuation=False, uncontracttext=False):
+    if uncontracttext:
+        text = uncontract(text)
+    tokens = nlp(text)
+    return _get_svos(tokens, removepunctuation)
 
 # find verbs and their subjects / objects to create SVOs, detect passive/active sentences
-def findSVOs(tokens):
+# removepunctuation= True, removes the punctuation signs in the result
+def _get_svos(tokens, removepunctuation=False):
     svos = []
     is_pas = _is_passive(tokens)
     verbs = _find_verbs(tokens)
@@ -296,15 +310,15 @@ def findSVOs(tokens):
                     for obj in objs:
                         objNegated = _is_negated(obj)
                         if is_pas:  # reverse object / subject for passive
-                            svos.append((to_str(expand(obj, tokens, visited)),
-                                         "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited))))
-                            svos.append((to_str(expand(obj, tokens, visited)),
-                                         "!" + v2.lemma_ if verbNegated or objNegated else v2.lemma_, to_str(expand(sub, tokens, visited))))
+                            svos.append((to_str(expand(obj, tokens, visited, removepunctuation)),
+                                         "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited, removepunctuation))))
+                            svos.append((to_str(expand(obj, tokens, visited, removepunctuation)),
+                                         "!" + v2.lemma_ if verbNegated or objNegated else v2.lemma_, to_str(expand(sub, tokens, visited, removepunctuation))))
                         else:
-                            svos.append((to_str(expand(sub, tokens, visited)),
-                                         "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited))))
-                            svos.append((to_str(expand(sub, tokens, visited)),
-                                         "!" + v2.lower_ if verbNegated or objNegated else v2.lower_, to_str(expand(obj, tokens, visited))))
+                            svos.append((to_str(expand(sub, tokens, visited, removepunctuation)),
+                                         "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited, removepunctuation))))
+                            svos.append((to_str(expand(sub, tokens, visited, removepunctuation)),
+                                         "!" + v2.lower_ if verbNegated or objNegated else v2.lower_, to_str(expand(obj, tokens, visited, removepunctuation))))
             else:
                 v, objs = _get_all_objs(v, is_pas)
                 for sub in subs:
@@ -312,15 +326,15 @@ def findSVOs(tokens):
                         for obj in objs:
                             objNegated = _is_negated(obj)
                             if is_pas:  # reverse object / subject for passive
-                                svos.append((to_str(expand(obj, tokens, visited)),
-                                             "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited))))
+                                svos.append((to_str(expand(obj, tokens, visited, removepunctuation)),
+                                             "!" + v.lemma_ if verbNegated or objNegated else v.lemma_, to_str(expand(sub, tokens, visited, removepunctuation))))
                             else:
-                                svos.append((to_str(expand(sub, tokens, visited)),
-                                             "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited))))
+                                svos.append((to_str(expand(sub, tokens, visited, removepunctuation)),
+                                             "!" + v.lower_ if verbNegated or objNegated else v.lower_, to_str(expand(obj, tokens, visited, removepunctuation))))
                     else:
                         # no obj - just return the SV parts
-                        svos.append((to_str(expand(sub, tokens, visited)),
-                                     "!" + v.lower_ if verbNegated else v.lower_,))
+                        svos.append((to_str(expand(sub, tokens, visited, removepunctuation)),
+                                     "!" + v.lower_ if verbNegated else v.lower_, ''))
 
     return svos
 
