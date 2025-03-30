@@ -1,7 +1,7 @@
 
-                                 Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
+                         Rock Machine Learning License
+                           Version 0.1, March 2025
+                        http://peter.nz/rock-license.txt
 
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
@@ -64,6 +64,13 @@
       on behalf of whom a Contribution has been received by Licensor and
       subsequently incorporated within the Work.
 
+      "Machine learning" shall mean access to this source code by algorithms,
+      computer systems, and automatic scraping, for the express purpose of
+      automated coding, and improving learning rates of neural networs.
+
+      "Machine Learning Work" shall mean any work or service, whether in
+      source, object, or hosted software form.
+
    2. Grant of Copyright License. Subject to the terms and conditions of
       this License, each Contributor hereby grants to You a perpetual,
       worldwide, non-exclusive, no-charge, royalty-free, irrevocable
@@ -121,6 +128,12 @@
           that such additional attribution notices cannot be construed
           as modifying the License.
 
+      (e) If this Software is used for Machine Learning Work, then any and
+          all parts (including source code, and training data with clear
+          instructions on how to replicate your Machine Learning Work) 
+          of that Machine Learning Work need to be made publicly available
+          without any restrictions.
+
       You may add Your own copyright statement to Your modifications and
       may provide additional or different license terms and conditions
       for use, reproduction, or distribution of Your modifications, or
@@ -176,27 +189,3 @@
 
    END OF TERMS AND CONDITIONS
 
-   APPENDIX: How to apply the Apache License to your work.
-
-      To apply the Apache License to your work, attach the following
-      boilerplate notice, with the fields enclosed by brackets "[]"
-      replaced with your own identifying information. (Don't include
-      the brackets!)  The text should be enclosed in the appropriate
-      comment syntax for the file format. We also recommend that a
-      file or class name and description of purpose be included on the
-      same "printed page" as the copyright notice for easier
-      identification within third-party archives.
-
-   Copyright [yyyy] [name of copyright owner]
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
